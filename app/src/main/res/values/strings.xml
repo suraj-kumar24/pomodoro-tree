@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Pomodoro Tree</string>
+    <string name="notification_channel_timer">Focus Session</string>
+    <string name="notification_channel_completion">Session Complete</string>
+    <string name="notification_channel_alerts">Overtime Alerts</string>
+</resources>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Simple tree icon for launcher -->
+    <!-- Trunk -->
+    <path
+        android:fillColor="#5D4037"
+        android:pathData="M51,70 L57,70 L57,85 L51,85 Z" />
+    <!-- Canopy -->
+    <path
+        android:fillColor="#4A6741"
+        android:pathData="M54,30 C40,30 30,42 30,52 C30,62 38,70 54,70 C70,70 78,62 78,52 C78,42 68,30 54,30 Z" />
+</vector>
