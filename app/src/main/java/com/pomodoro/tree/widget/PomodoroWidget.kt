@@ -47,18 +47,9 @@ class PomodoroGlanceWidget : GlanceAppWidget() {
 
 @Composable
 private fun WidgetContent(isRunning: Boolean) {
-    val bgColor = ColorProvider(
-        day = androidx.compose.ui.graphics.Color(0xFF1A1A2E),
-        night = androidx.compose.ui.graphics.Color(0xFF1A1A2E)
-    )
-    val textColor = ColorProvider(
-        day = androidx.compose.ui.graphics.Color(0xFFD4D4D4),
-        night = androidx.compose.ui.graphics.Color(0xFFD4D4D4)
-    )
-    val accentColor = ColorProvider(
-        day = androidx.compose.ui.graphics.Color(0xFF4A6741),
-        night = androidx.compose.ui.graphics.Color(0xFF4A6741)
-    )
+    val bgColor = ColorProvider(androidx.compose.ui.graphics.Color(0xFF1A1A2E))
+    val textColor = ColorProvider(androidx.compose.ui.graphics.Color(0xFFD4D4D4))
+    val accentColor = ColorProvider(androidx.compose.ui.graphics.Color(0xFF4A6741))
 
     Box(
         modifier = GlanceModifier
