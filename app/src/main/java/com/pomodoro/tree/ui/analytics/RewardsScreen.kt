@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import com.pomodoro.tree.data.db.RewardEntity
 import com.pomodoro.tree.ui.theme.ForestGreen
 import com.pomodoro.tree.ui.theme.OvertimeAmber
+import com.pomodoro.tree.ui.components.ScreenHeader
 import com.pomodoro.tree.ui.theme.TextMuted
 import com.pomodoro.tree.ui.theme.TextSecondary
 import java.time.Instant
@@ -53,6 +54,7 @@ private val EMOJI_OPTIONS = listOf(
 @Composable
 fun RewardsScreen(
     viewModel: RewardsViewModel,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -68,11 +70,7 @@ fun RewardsScreen(
         // Balance header
         item {
             Column {
-                Text(
-                    text = "Rewards",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
+                ScreenHeader(title = "Rewards", onBack = onBack)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "%.1fh".format(uiState.focusBalanceHours),

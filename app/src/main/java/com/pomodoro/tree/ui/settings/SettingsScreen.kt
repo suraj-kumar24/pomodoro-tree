@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.pomodoro.tree.ui.components.ScreenHeader
 import com.pomodoro.tree.ui.theme.TextMuted
 import com.pomodoro.tree.ui.theme.TextSecondary
 
@@ -32,6 +33,7 @@ import com.pomodoro.tree.ui.theme.TextSecondary
 fun SettingsScreen(
     viewModel: SettingsViewModel,
     onNavigateToRewards: () -> Unit,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -43,11 +45,7 @@ fun SettingsScreen(
             .padding(16.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        Text(
-            text = "Settings",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
+        ScreenHeader(title = "Settings", onBack = onBack)
 
         Spacer(modifier = Modifier.height(24.dp))
 

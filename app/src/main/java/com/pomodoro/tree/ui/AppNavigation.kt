@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.SystemClock
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
@@ -35,21 +36,17 @@ import com.pomodoro.tree.domain.timer.TimerState
 import com.pomodoro.tree.receiver.AlertReceiver
 import com.pomodoro.tree.service.TimerService
 import com.pomodoro.tree.ui.active.ActiveSessionScreen
+import com.pomodoro.tree.ui.analytics.AnalyticsScreen
 import com.pomodoro.tree.ui.analytics.RewardsScreen
 import com.pomodoro.tree.ui.analytics.RewardsViewModel
-import com.pomodoro.tree.ui.analytics.daily.DailyForestScreen
-import com.pomodoro.tree.ui.analytics.weekly.WeeklyScreen
-import com.pomodoro.tree.ui.analytics.yearly.YearlyHeatmapScreen
 import com.pomodoro.tree.ui.completion.CompletionScreen
 import com.pomodoro.tree.ui.home.HomeScreen
 import com.pomodoro.tree.ui.home.HomeViewModel
 import com.pomodoro.tree.ui.settings.SettingsScreen
 import com.pomodoro.tree.ui.settings.SettingsViewModel
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 enum class Screen {
-    HOME, ACTIVE, COMPLETION, DAILY_FOREST, WEEKLY, YEARLY, SETTINGS, REWARDS
+    HOME, ACTIVE, COMPLETION, ANALYTICS, SETTINGS, REWARDS
 }
 
 @Composable
@@ -69,19 +66,16 @@ fun AppNavigation(
     LaunchedEffect(timerState) {
         when (val state = timerState) {
             is TimerState.Running -> {
-                // Record session start info
                 if (sessionStartTimestamp == 0L) {
                     sessionStartTimestamp = System.currentTimeMillis()
                 }
             }
             is TimerState.Completed -> {
                 if (state.overtimeMillis == 0L) {
-                    // Just transitioned to completed — schedule escalating alerts
                     scheduleEscalatingAlerts(context)
                 }
             }
             is TimerState.Cancelled -> {
-                // Save cancelled session
                 sessionRepository.saveSession(
                     startTimestamp = sessionStartTimestamp,
                     plannedDurationMinutes = sessionDurationMinutes,
@@ -92,10 +86,8 @@ fun AppNavigation(
                 )
                 sessionStartTimestamp = 0L
             }
-            is TimerState.Finished -> {
-                // Finished is set after acknowledge — do nothing here
-            }
-            is TimerState.Idle -> { /* nothing */ }
+            is TimerState.Finished -> { }
+            is TimerState.Idle -> { }
         }
     }
 
@@ -119,7 +111,12 @@ fun AppNavigation(
         currentScreen = autoScreen
     }
 
-    // Swipe detection for gesture navigation (only on non-active screens)
+    // Android back button — go back to HOME from sub-pages
+    BackHandler(enabled = currentScreen != Screen.HOME && currentScreen != Screen.ACTIVE) {
+        currentScreen = Screen.HOME
+    }
+
+    // Swipe detection for gesture navigation
     val swipeThreshold = 80f
     val currentScreenState by rememberUpdatedState(currentScreen)
     val swipeModifier = Modifier
@@ -155,17 +152,12 @@ fun AppNavigation(
                             swiped = true
                             if (totalX < 0) { // Swipe left
                                 currentScreen = when (screen) {
-                                    Screen.HOME -> Screen.DAILY_FOREST
-                                    Screen.WEEKLY -> Screen.YEARLY
+                                    Screen.HOME -> Screen.ANALYTICS
                                     else -> screen
                                 }
-                            } else { // Swipe right
+                            } else { // Swipe right — always go back to HOME
                                 currentScreen = when (screen) {
-                                    Screen.HOME -> Screen.WEEKLY
-                                    Screen.DAILY_FOREST -> Screen.HOME
-                                    Screen.YEARLY -> Screen.WEEKLY
-                                    Screen.SETTINGS -> Screen.HOME
-                                    Screen.REWARDS -> Screen.HOME
+                                    Screen.ANALYTICS, Screen.SETTINGS, Screen.REWARDS -> Screen.HOME
                                     else -> screen
                                 }
                             }
@@ -174,13 +166,11 @@ fun AppNavigation(
                             if (totalY > 0) { // Swipe down
                                 currentScreen = when (screen) {
                                     Screen.HOME -> Screen.SETTINGS
-                                    Screen.REWARDS -> Screen.HOME
                                     else -> screen
                                 }
                             } else { // Swipe up
                                 currentScreen = when (screen) {
                                     Screen.HOME -> Screen.REWARDS
-                                    Screen.SETTINGS -> Screen.HOME
                                     else -> screen
                                 }
                             }
@@ -197,26 +187,20 @@ fun AppNavigation(
                 when {
                     targetState == Screen.ACTIVE || targetState == Screen.COMPLETION ->
                         slideInVertically { -it } togetherWith slideOutVertically { it }
-                    // Horizontal: left means slide in from right, right means slide in from left
-                    // Screen order: WEEKLY <- HOME -> DAILY_FOREST, WEEKLY -> YEARLY
-                    initialState == Screen.HOME && targetState == Screen.DAILY_FOREST ->
+                    // Going to sub-pages
+                    initialState == Screen.HOME && targetState == Screen.ANALYTICS ->
                         slideInHorizontally { it } togetherWith slideOutHorizontally { -it }
-                    initialState == Screen.DAILY_FOREST && targetState == Screen.HOME ->
-                        slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
-                    initialState == Screen.HOME && targetState == Screen.WEEKLY ->
-                        slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
-                    initialState == Screen.WEEKLY && (targetState == Screen.HOME || targetState == Screen.YEARLY) ->
-                        slideInHorizontally { it } togetherWith slideOutHorizontally { -it }
-                    initialState == Screen.YEARLY && targetState == Screen.WEEKLY ->
-                        slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
-                    // Vertical: settings is below, rewards is above
-                    targetState == Screen.SETTINGS || initialState == Screen.REWARDS ->
+                    initialState == Screen.HOME && targetState == Screen.SETTINGS ->
                         slideInVertically { it } togetherWith slideOutVertically { -it }
-                    targetState == Screen.REWARDS || initialState == Screen.SETTINGS ->
+                    initialState == Screen.HOME && targetState == Screen.REWARDS ->
                         slideInVertically { -it } togetherWith slideOutVertically { it }
-                    // Fallback for back-to-home from settings/rewards via swipe right
-                    (initialState == Screen.SETTINGS || initialState == Screen.REWARDS) && targetState == Screen.HOME ->
+                    // Coming back to HOME
+                    targetState == Screen.HOME && initialState == Screen.ANALYTICS ->
                         slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
+                    targetState == Screen.HOME && initialState == Screen.SETTINGS ->
+                        slideInVertically { -it } togetherWith slideOutVertically { it }
+                    targetState == Screen.HOME && initialState == Screen.REWARDS ->
+                        slideInVertically { it } togetherWith slideOutVertically { -it }
                     else ->
                         slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
                 }
@@ -245,7 +229,6 @@ fun AppNavigation(
                     ActiveSessionScreen(
                         timerEngine = timerEngine,
                         onCancel = {
-                            // Save cancelled session
                             context.startService(TimerService.cancelIntent(context))
                         }
                     )
@@ -255,7 +238,6 @@ fun AppNavigation(
                     CompletionScreen(
                         timerEngine = timerEngine,
                         onAcknowledge = {
-                            // Save completed session
                             val completed = timerEngine.state.value as? TimerState.Completed
                             if (completed != null) {
                                 kotlinx.coroutines.MainScope().launch {
@@ -277,33 +259,28 @@ fun AppNavigation(
                     )
                 }
 
-                Screen.DAILY_FOREST -> {
-                    val today = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
-                    DailyForestScreen(
-                        sessionsFlow = sessionRepository.getSessionsForToday(),
-                        dateLabel = "Today"
+                Screen.ANALYTICS -> {
+                    AnalyticsScreen(
+                        repository = sessionRepository,
+                        onBack = { currentScreen = Screen.HOME }
                     )
-                }
-
-                Screen.WEEKLY -> {
-                    WeeklyScreen(repository = sessionRepository)
-                }
-
-                Screen.YEARLY -> {
-                    YearlyHeatmapScreen(repository = sessionRepository)
                 }
 
                 Screen.SETTINGS -> {
                     val settingsViewModel: SettingsViewModel = hiltViewModel()
                     SettingsScreen(
                         viewModel = settingsViewModel,
-                        onNavigateToRewards = { currentScreen = Screen.REWARDS }
+                        onNavigateToRewards = { currentScreen = Screen.REWARDS },
+                        onBack = { currentScreen = Screen.HOME }
                     )
                 }
 
                 Screen.REWARDS -> {
                     val rewardsViewModel: RewardsViewModel = hiltViewModel()
-                    RewardsScreen(viewModel = rewardsViewModel)
+                    RewardsScreen(
+                        viewModel = rewardsViewModel,
+                        onBack = { currentScreen = Screen.HOME }
+                    )
                 }
             }
         }
