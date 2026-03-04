@@ -21,7 +21,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -89,7 +88,6 @@ fun HomeScreen(
                 color = TextMuted,
                 modifier = Modifier
                     .padding(top = 16.dp)
-                    .alpha(0.6f)
             )
 
             // Daily goal progress text
@@ -130,7 +128,6 @@ fun HomeScreen(
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 40.dp)
                 .clickable { onNavigateToRewards() }
-                .alpha(0.5f)
         )
     }
 }

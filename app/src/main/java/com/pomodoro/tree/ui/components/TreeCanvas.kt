@@ -166,6 +166,7 @@ private fun DrawScope.drawSprout(cx: Float, groundY: Float, stageProgress: Float
 
 private fun DrawScope.drawSapling(cx: Float, groundY: Float, stageProgress: Float, wiltProgress: Float) {
     val leafColor = lerpLeafColor(wiltProgress)
+    val leafColorDark = lerp(leafColor, TrunkBrown, 0.2f)
 
     // Trunk — thicker and taller
     val trunkHeight = size.height * 0.18f + size.height * 0.08f * stageProgress
@@ -186,15 +187,34 @@ private fun DrawScope.drawSapling(cx: Float, groundY: Float, stageProgress: Floa
     drawLine(color = TrunkBrown, start = Offset(cx, branchY1), end = Offset(cx - branchLen, branchY1 - branchLen * 0.6f), strokeWidth = 2f)
     drawLine(color = TrunkBrown, start = Offset(cx, branchY1), end = Offset(cx + branchLen, branchY1 - branchLen * 0.5f), strokeWidth = 2f)
 
-    // Leaf clusters at branch tips + top
-    val clusterRadius = size.width * 0.04f + size.width * 0.02f * stageProgress
-    drawCircle(color = leafColor, radius = clusterRadius, center = Offset(cx - branchLen, branchY1 - branchLen * 0.6f))
-    drawCircle(color = leafColor, radius = clusterRadius, center = Offset(cx + branchLen, branchY1 - branchLen * 0.5f))
-    drawCircle(color = leafColor, radius = clusterRadius * 1.2f, center = Offset(cx, trunkTop))
+    // Leaf clusters at branch tips — fans of leaves instead of circles
+    val leafSize = size.width * 0.04f + size.width * 0.02f * stageProgress
+    // Left branch tip
+    val lx = cx - branchLen
+    val ly = branchY1 - branchLen * 0.6f
+    drawLeaf(lx, ly, leafSize, 120f, leafColor)
+    drawLeaf(lx, ly, leafSize, 160f, leafColorDark)
+    drawLeaf(lx, ly, leafSize * 0.8f, 80f, leafColor)
+
+    // Right branch tip
+    val rx = cx + branchLen
+    val ry = branchY1 - branchLen * 0.5f
+    drawLeaf(rx, ry, leafSize, 60f, leafColor)
+    drawLeaf(rx, ry, leafSize, 20f, leafColorDark)
+    drawLeaf(rx, ry, leafSize * 0.8f, 100f, leafColor)
+
+    // Top crown — larger fan of leaves
+    val topSize = leafSize * 1.3f
+    drawLeaf(cx, trunkTop, topSize, 90f, leafColor)
+    drawLeaf(cx, trunkTop, topSize * 0.9f, 130f, leafColorDark)
+    drawLeaf(cx, trunkTop, topSize * 0.9f, 50f, leafColor)
+    drawLeaf(cx, trunkTop, topSize * 0.7f, 160f, leafColor)
 }
 
 private fun DrawScope.drawGrowingTree(cx: Float, groundY: Float, stageProgress: Float, wiltProgress: Float) {
     val leafColor = lerpLeafColor(wiltProgress)
+    val leafColorDark = lerp(leafColor, TrunkBrown, 0.15f)
+    val leafColorLight = lerp(leafColor, Color.White, 0.1f)
 
     // Thicker trunk
     val trunkHeight = size.height * 0.28f + size.height * 0.06f * stageProgress
@@ -228,18 +248,23 @@ private fun DrawScope.drawGrowingTree(cx: Float, groundY: Float, stageProgress: 
 
         drawLine(color = TrunkBrown, start = Offset(cx, by), end = Offset(bx, bey), strokeWidth = 3f)
 
-        // Leaf cluster at branch end
-        val clusterSize = size.width * 0.05f + size.width * 0.02f * stageProgress
-        drawCircle(color = leafColor, radius = clusterSize, center = Offset(bx, bey))
+        // Leaf cluster at branch end — fan of leaves
+        val leafSize = size.width * 0.04f + size.width * 0.015f * stageProgress
+        drawLeaf(bx, bey, leafSize, angle + 90f, leafColor)
+        drawLeaf(bx, bey, leafSize * 0.9f, angle + 50f, leafColorDark)
+        drawLeaf(bx, bey, leafSize * 0.9f, angle + 130f, leafColorLight)
     }
 
-    // Canopy forming at top
-    val canopyRadius = size.width * 0.10f + size.width * 0.06f * stageProgress
-    drawCircle(color = leafColor, radius = canopyRadius, center = Offset(cx, trunkTop + canopyRadius * 0.2f))
+    // Canopy forming at top — organic cloud shape path
+    val canopyR = size.width * 0.12f + size.width * 0.06f * stageProgress
+    val canopyCenter = trunkTop + canopyR * 0.1f
+    drawCanopy(cx, canopyCenter, canopyR, leafColor, leafColorDark)
 }
 
 private fun DrawScope.drawFullTree(cx: Float, groundY: Float, stageProgress: Float, wiltProgress: Float) {
     val leafColor = lerpLeafColor(wiltProgress)
+    val leafColorDark = lerp(leafColor, TrunkBrown, 0.15f)
+    val leafColorLight = lerp(leafColor, Color.White, 0.08f)
 
     // Full thick trunk
     val trunkHeight = size.height * 0.35f
@@ -274,34 +299,33 @@ private fun DrawScope.drawFullTree(cx: Float, groundY: Float, stageProgress: Flo
         drawLine(color = TrunkBrown.copy(alpha = 0.7f), start = Offset(cx, by), end = Offset(bx, bey), strokeWidth = 3f)
     }
 
-    // Full canopy — overlapping circles for organic shape
+    // Full canopy — organic cloud-like path
     val canopyBase = trunkTop + trunkHeight * 0.15f
-    val r = size.width * 0.14f + size.width * 0.02f * stageProgress
+    val r = size.width * 0.16f + size.width * 0.03f * stageProgress
 
-    drawCircle(color = leafColor, radius = r, center = Offset(cx, canopyBase))
-    drawCircle(color = leafColor, radius = r * 0.85f, center = Offset(cx - r * 0.5f, canopyBase + r * 0.15f))
-    drawCircle(color = leafColor, radius = r * 0.85f, center = Offset(cx + r * 0.5f, canopyBase + r * 0.15f))
-    drawCircle(color = leafColor, radius = r * 0.75f, center = Offset(cx - r * 0.25f, canopyBase - r * 0.5f))
-    drawCircle(color = leafColor, radius = r * 0.75f, center = Offset(cx + r * 0.25f, canopyBase - r * 0.5f))
-    drawCircle(color = leafColor.copy(alpha = 0.8f), radius = r * 0.6f, center = Offset(cx, canopyBase - r * 0.7f))
+    drawCanopy(cx, canopyBase, r, leafColor, leafColorDark)
+
+    // Texture leaves scattered on canopy surface
+    val leafSize = size.width * 0.025f
+    drawLeaf(cx - r * 0.4f, canopyBase - r * 0.3f, leafSize, 120f, leafColorLight)
+    drawLeaf(cx + r * 0.3f, canopyBase - r * 0.5f, leafSize, 60f, leafColorLight)
+    drawLeaf(cx - r * 0.1f, canopyBase - r * 0.7f, leafSize, 90f, leafColorLight)
+    drawLeaf(cx + r * 0.5f, canopyBase + r * 0.1f, leafSize, 45f, leafColorDark)
+    drawLeaf(cx - r * 0.5f, canopyBase + r * 0.05f, leafSize, 135f, leafColorDark)
 
     // Falling leaves during wilting
     if (wiltProgress > 0.3f) {
         val fallenCount = ((wiltProgress - 0.3f) / 0.7f * 5).toInt().coerceAtMost(5)
         val leafPositions = listOf(
-            Offset(cx - r * 0.8f, groundY - size.height * 0.05f),
-            Offset(cx + r * 0.6f, groundY - size.height * 0.03f),
-            Offset(cx - r * 0.3f, groundY - size.height * 0.02f),
-            Offset(cx + r * 0.9f, groundY - size.height * 0.06f),
-            Offset(cx - r * 1.0f, groundY - size.height * 0.01f),
+            Pair(Offset(cx - r * 0.8f, groundY - size.height * 0.05f), -30f),
+            Pair(Offset(cx + r * 0.6f, groundY - size.height * 0.03f), 45f),
+            Pair(Offset(cx - r * 0.3f, groundY - size.height * 0.02f), 15f),
+            Pair(Offset(cx + r * 0.9f, groundY - size.height * 0.06f), -60f),
+            Pair(Offset(cx - r * 1.0f, groundY - size.height * 0.01f), 70f),
         )
         for (i in 0 until fallenCount) {
-            val pos = leafPositions[i]
-            drawCircle(
-                color = LeafYellow.copy(alpha = 0.6f),
-                radius = size.width * 0.012f,
-                center = pos
-            )
+            val (pos, angle) = leafPositions[i]
+            drawLeaf(pos.x, pos.y, size.width * 0.018f, angle, LeafYellow.copy(alpha = 0.6f))
         }
     }
 }
@@ -338,6 +362,67 @@ private fun DrawScope.drawWitheredTree(cx: Float, groundY: Float) {
 
         drawLine(color = WiltedGray.copy(alpha = 0.7f), start = Offset(cx, by), end = Offset(bx, bey), strokeWidth = 2f)
     }
+}
+
+private fun DrawScope.drawCanopy(cx: Float, cy: Float, r: Float, color: Color, colorDark: Color) {
+    // Organic cloud-like canopy shape using cubic Bezier curves
+    val canopyPath = Path().apply {
+        // Start at bottom-left
+        moveTo(cx - r * 0.9f, cy + r * 0.3f)
+        // Left side bulge up
+        cubicTo(
+            cx - r * 1.1f, cy - r * 0.1f,
+            cx - r * 0.9f, cy - r * 0.6f,
+            cx - r * 0.4f, cy - r * 0.75f
+        )
+        // Top crown
+        cubicTo(
+            cx - r * 0.15f, cy - r * 1.0f,
+            cx + r * 0.15f, cy - r * 1.0f,
+            cx + r * 0.4f, cy - r * 0.75f
+        )
+        // Right side bulge down
+        cubicTo(
+            cx + r * 0.9f, cy - r * 0.6f,
+            cx + r * 1.1f, cy - r * 0.1f,
+            cx + r * 0.9f, cy + r * 0.3f
+        )
+        // Bottom curve back to start
+        cubicTo(
+            cx + r * 0.5f, cy + r * 0.45f,
+            cx - r * 0.5f, cy + r * 0.45f,
+            cx - r * 0.9f, cy + r * 0.3f
+        )
+        close()
+    }
+    // Draw shadow/depth layer slightly offset
+    drawPath(canopyPath, colorDark, style = Fill)
+    // Draw main canopy slightly up and left for depth
+    val mainPath = Path().apply {
+        moveTo(cx - r * 0.85f, cy + r * 0.25f)
+        cubicTo(
+            cx - r * 1.05f, cy - r * 0.15f,
+            cx - r * 0.85f, cy - r * 0.55f,
+            cx - r * 0.35f, cy - r * 0.7f
+        )
+        cubicTo(
+            cx - r * 0.1f, cy - r * 0.95f,
+            cx + r * 0.1f, cy - r * 0.95f,
+            cx + r * 0.35f, cy - r * 0.7f
+        )
+        cubicTo(
+            cx + r * 0.85f, cy - r * 0.55f,
+            cx + r * 1.05f, cy - r * 0.15f,
+            cx + r * 0.85f, cy + r * 0.25f
+        )
+        cubicTo(
+            cx + r * 0.45f, cy + r * 0.4f,
+            cx - r * 0.45f, cy + r * 0.4f,
+            cx - r * 0.85f, cy + r * 0.25f
+        )
+        close()
+    }
+    drawPath(mainPath, color, style = Fill)
 }
 
 private fun DrawScope.drawLeaf(x: Float, y: Float, size: Float, angleDeg: Float, color: Color) {

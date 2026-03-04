@@ -21,12 +21,12 @@ val WiltedGray = Color(0xFF5A5A5A)  // dead tree
 
 // Text
 val TextPrimary = Color(0xFFD4D4D4)
-val TextSecondary = Color(0xFF8A8A9A)
-val TextMuted = Color(0xFF5A5A6A)
+val TextSecondary = Color(0xFF9A9AB0)
+val TextMuted = Color(0xFF7A7A8E)
 
 // Status
 val OvertimeAmber = Color(0xFFD4A34C)
-val CancelRed = Color(0xFF8B3A3A)
+val CancelRed = Color(0xFFC45050)
 val SuccessGreen = Color(0xFF4A8B4A)
 
 // Tag colors

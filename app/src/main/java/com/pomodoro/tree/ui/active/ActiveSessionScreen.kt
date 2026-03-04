@@ -34,6 +34,7 @@ import com.pomodoro.tree.ui.components.ProgressRing
 import com.pomodoro.tree.ui.components.TreeCanvas
 import com.pomodoro.tree.ui.theme.CancelRed
 import com.pomodoro.tree.ui.theme.TextMuted
+import com.pomodoro.tree.ui.theme.TextSecondary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,8 +82,7 @@ fun ActiveSessionScreen(
             Text(
                 text = running?.remainingFormatted ?: "0:00",
                 style = MaterialTheme.typography.headlineMedium,
-                color = TextMuted,
-                modifier = Modifier.alpha(0.4f)
+                color = TextSecondary
             )
         }
     }

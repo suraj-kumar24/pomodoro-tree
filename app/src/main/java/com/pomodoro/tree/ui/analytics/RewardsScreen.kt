@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -75,7 +76,7 @@ fun RewardsScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "%.1fh".format(uiState.focusBalanceHours),
-                    style = MaterialTheme.typography.displayLarge,
+                    style = MaterialTheme.typography.headlineLarge,
                     color = ForestGreen
                 )
                 Text(
@@ -323,14 +324,13 @@ private fun AddRewardDialog(
                             row.forEach { emoji ->
                                 Box(
                                     modifier = Modifier
-                                        .clickable { selectedEmoji = emoji }
-                                        .padding(4.dp),
+                                        .size(48.dp)
+                                        .clickable { selectedEmoji = emoji },
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
                                         text = emoji,
-                                        style = MaterialTheme.typography.headlineSmall,
-                                        modifier = Modifier.padding(4.dp)
+                                        style = MaterialTheme.typography.headlineSmall
                                     )
                                 }
                             }

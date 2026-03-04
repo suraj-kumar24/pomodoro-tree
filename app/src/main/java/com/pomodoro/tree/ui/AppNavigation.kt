@@ -11,16 +11,17 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
@@ -119,64 +120,103 @@ fun AppNavigation(
     }
 
     // Swipe detection for gesture navigation (only on non-active screens)
-    val swipeModifier = if (currentScreen != Screen.ACTIVE && currentScreen != Screen.COMPLETION) {
-        Modifier
-            .pointerInput(currentScreen) {
-                detectHorizontalDragGestures { _, dragAmount ->
-                    if (dragAmount < -80) { // Swipe left
-                        currentScreen = when (currentScreen) {
-                            Screen.HOME -> Screen.DAILY_FOREST
-                            Screen.WEEKLY -> Screen.YEARLY
-                            else -> currentScreen
-                        }
-                    } else if (dragAmount > 80) { // Swipe right
-                        currentScreen = when (currentScreen) {
-                            Screen.HOME -> Screen.WEEKLY
-                            Screen.DAILY_FOREST -> Screen.HOME
-                            Screen.YEARLY -> Screen.WEEKLY
-                            Screen.SETTINGS -> Screen.HOME
-                            Screen.REWARDS -> Screen.HOME
-                            else -> currentScreen
+    val swipeThreshold = 80f
+    val currentScreenState by rememberUpdatedState(currentScreen)
+    val swipeModifier = Modifier
+        .pointerInput(Unit) {
+            var totalX = 0f
+            var totalY = 0f
+            var swiped = false
+            detectDragGestures(
+                onDragStart = {
+                    totalX = 0f
+                    totalY = 0f
+                    swiped = false
+                },
+                onDragEnd = {
+                    totalX = 0f
+                    totalY = 0f
+                    swiped = false
+                },
+                onDragCancel = {
+                    totalX = 0f
+                    totalY = 0f
+                    swiped = false
+                },
+                onDrag = { change, dragAmount ->
+                    val screen = currentScreenState
+                    if (screen == Screen.ACTIVE || screen == Screen.COMPLETION) return@detectDragGestures
+                    change.consume()
+                    totalX += dragAmount.x
+                    totalY += dragAmount.y
+                    if (!swiped) {
+                        val isHorizontal = kotlin.math.abs(totalX) > kotlin.math.abs(totalY)
+                        if (isHorizontal && kotlin.math.abs(totalX) > swipeThreshold) {
+                            swiped = true
+                            if (totalX < 0) { // Swipe left
+                                currentScreen = when (screen) {
+                                    Screen.HOME -> Screen.DAILY_FOREST
+                                    Screen.WEEKLY -> Screen.YEARLY
+                                    else -> screen
+                                }
+                            } else { // Swipe right
+                                currentScreen = when (screen) {
+                                    Screen.HOME -> Screen.WEEKLY
+                                    Screen.DAILY_FOREST -> Screen.HOME
+                                    Screen.YEARLY -> Screen.WEEKLY
+                                    Screen.SETTINGS -> Screen.HOME
+                                    Screen.REWARDS -> Screen.HOME
+                                    else -> screen
+                                }
+                            }
+                        } else if (!isHorizontal && kotlin.math.abs(totalY) > swipeThreshold) {
+                            swiped = true
+                            if (totalY > 0) { // Swipe down
+                                currentScreen = when (screen) {
+                                    Screen.HOME -> Screen.SETTINGS
+                                    Screen.REWARDS -> Screen.HOME
+                                    else -> screen
+                                }
+                            } else { // Swipe up
+                                currentScreen = when (screen) {
+                                    Screen.HOME -> Screen.REWARDS
+                                    Screen.SETTINGS -> Screen.HOME
+                                    else -> screen
+                                }
+                            }
                         }
                     }
                 }
-            }
-            .pointerInput(currentScreen) {
-                detectVerticalDragGestures { _, dragAmount ->
-                    if (dragAmount > 80) { // Swipe down
-                        currentScreen = when (currentScreen) {
-                            Screen.HOME -> Screen.SETTINGS
-                            Screen.REWARDS -> Screen.HOME
-                            else -> currentScreen
-                        }
-                    } else if (dragAmount < -80) { // Swipe up
-                        currentScreen = when (currentScreen) {
-                            Screen.HOME -> Screen.REWARDS
-                            Screen.SETTINGS -> Screen.HOME
-                            else -> currentScreen
-                        }
-                    }
-                }
-            }
-    } else {
-        Modifier
-    }
+            )
+        }
 
-    Box(modifier = Modifier.fillMaxSize().then(swipeModifier)) {
+    Box(modifier = Modifier.fillMaxSize().systemBarsPadding().then(swipeModifier)) {
         AnimatedContent(
             targetState = currentScreen,
             transitionSpec = {
                 when {
                     targetState == Screen.ACTIVE || targetState == Screen.COMPLETION ->
                         slideInVertically { -it } togetherWith slideOutVertically { it }
-                    targetState == Screen.DAILY_FOREST ->
+                    // Horizontal: left means slide in from right, right means slide in from left
+                    // Screen order: WEEKLY <- HOME -> DAILY_FOREST, WEEKLY -> YEARLY
+                    initialState == Screen.HOME && targetState == Screen.DAILY_FOREST ->
                         slideInHorizontally { it } togetherWith slideOutHorizontally { -it }
-                    targetState == Screen.WEEKLY || targetState == Screen.YEARLY ->
+                    initialState == Screen.DAILY_FOREST && targetState == Screen.HOME ->
                         slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
-                    targetState == Screen.SETTINGS ->
+                    initialState == Screen.HOME && targetState == Screen.WEEKLY ->
+                        slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
+                    initialState == Screen.WEEKLY && (targetState == Screen.HOME || targetState == Screen.YEARLY) ->
+                        slideInHorizontally { it } togetherWith slideOutHorizontally { -it }
+                    initialState == Screen.YEARLY && targetState == Screen.WEEKLY ->
+                        slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
+                    // Vertical: settings is below, rewards is above
+                    targetState == Screen.SETTINGS || initialState == Screen.REWARDS ->
                         slideInVertically { it } togetherWith slideOutVertically { -it }
-                    targetState == Screen.REWARDS ->
+                    targetState == Screen.REWARDS || initialState == Screen.SETTINGS ->
                         slideInVertically { -it } togetherWith slideOutVertically { it }
+                    // Fallback for back-to-home from settings/rewards via swipe right
+                    (initialState == Screen.SETTINGS || initialState == Screen.REWARDS) && targetState == Screen.HOME ->
+                        slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
                     else ->
                         slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
                 }
