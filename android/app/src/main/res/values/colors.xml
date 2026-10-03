@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="coil_bg">#F5EAD8</color>
+    <color name="colorPrimary">#C67139</color>
+    <color name="colorPrimaryDark">#F5EAD8</color>
+    <color name="colorAccent">#C67139</color>
+</resources>
