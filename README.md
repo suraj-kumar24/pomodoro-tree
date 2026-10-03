@@ -4,6 +4,10 @@ A calm, one-tap focus timer for Android. Every finished session fires a clay pot
 
 **Stack:** React 19 + TypeScript + Vite for the UI, wrapped as a native Android app with Capacitor 8. All data stays on the phone (WebView `localStorage`).
 
+## Install on a phone
+
+Every push builds a debug APK in GitHub Actions. On your phone, open the repo's **Releases → Coil debug build**, download `coil-debug.apk` and open it (allow installs from your browser when Android asks).
+
 ## Build the APK
 
 Requirements: Node 22+, JDK 21, and the Android SDK (Android Studio installs it; set `ANDROID_HOME`).

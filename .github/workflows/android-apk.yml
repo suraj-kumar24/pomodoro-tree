@@ -1,0 +1,67 @@
+name: Android APK
+
+on:
+  push:
+    branches: [claude/pomodoro-tree-session_01JrCd6Za6XoxYuMdF1L2dYe]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build web bundle and sync Android project
+        run: |
+          npm run build
+          npx cap sync android
+
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Rename APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk coil-debug.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coil-debug-apk
+          path: coil-debug.apk
+
+      # A rolling pre-release so the latest APK can be downloaded straight from a phone browser.
+      - name: Publish latest debug build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest-debug --cleanup-tag --yes || true
+          gh release create latest-debug coil-debug.apk \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "Coil debug build" \
+            --notes "Debug APK built from ${GITHUB_SHA::7}. Download coil-debug.apk on your phone and open it to install."
